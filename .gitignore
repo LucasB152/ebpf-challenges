@@ -1,0 +1,17 @@
+# CLion
+.idea/
+*.iml
+*.iws
+*.ipr
+cmake-build-*/
+
+# Compiled files
+*.o
+*.so
+*.a
+*.out
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
