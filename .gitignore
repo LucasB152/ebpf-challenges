@@ -1,4 +1,9 @@
-/.idea/
+# CLion
+.idea/
+*.iml
+*.iws
+*.ipr
+cmake-build-*/
 
 # CMake (this project uses per-challenge Makefiles, not CMake)
 CMakeLists.txt
