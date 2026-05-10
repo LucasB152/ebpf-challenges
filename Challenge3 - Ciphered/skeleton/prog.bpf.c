@@ -38,7 +38,7 @@ int handle_hook(struct trace_event_raw_sys_enter *ctx) {
 
   int fd = (int)ctx->args[0];
   if (fd <= 2)
-    return 0
+    return 0;
 
   char *buf = (char *)ctx->args[1];
   size_t count = (size_t)ctx->args[2];
