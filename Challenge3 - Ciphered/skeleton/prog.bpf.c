@@ -21,7 +21,7 @@ struct {
 } config_map SEC(".maps");
 
 SEC("tracepoint/syscalls/sys_enter_write")
-int handle_write(struct trace_event_raw_sys_enter *ctx) {
+int handle_hook(struct trace_event_raw_sys_enter *ctx) {
   __u32 key = 0;
   struct config *cfg = bpf_map_lookup_elem(&config_map, &key);
   if (!cfg)
@@ -35,6 +35,10 @@ int handle_write(struct trace_event_raw_sys_enter *ctx) {
   __u32 shift = cfg->shift;
   if (shift == 0)
     return 0;
+
+  int fd = (int)ctx->args[0];
+  if (fd <= 2)
+    return 0
 
   char *buf = (char *)ctx->args[1];
   size_t count = (size_t)ctx->args[2];

@@ -19,8 +19,9 @@ static void handle_sig(int sig) { running = 0; }
 
 static void usage(const char *prog) {
   fprintf(stderr,
-          "Usage: %s [--shift <N>] <target_process_name>\n"
-          "  --shift   Caesar shift; any int (negative ok), normalized to [0,25] (default: 3)\n",
+          "Usage: %s [--shift <N>] [target_process_name]\n"
+          "  --shift   Caesar shift, normalized to [0,25] (default: 3)\n"
+          "  target    Process name to filter (default: echo_test)\n",
           prog);
 }
 
@@ -49,12 +50,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  // Positional argument: target process name
-  if (optind >= argc) {
-    usage(argv[0]);
-    return 1;
-  }
-  const char *target = argv[optind];
+  const char *target = (optind < argc) ? argv[optind] : "echo_test";
 
   cfg.shift = (unsigned int)(((raw_shift % 26) + 26) % 26);
   strncpy(cfg.target, target, COMM_LEN - 1);
