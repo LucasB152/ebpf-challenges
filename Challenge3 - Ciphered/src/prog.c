@@ -64,13 +64,14 @@ int main(int argc, char **argv) {
   }
 
   // Load the BPF object file into the kernel
-  if (bpf_object__load(obj)) {
+  int err = bpf_object__load(obj);
+  if (err) {
     perror("bpf_object__load");
     bpf_object__close(obj);
     return 1;
   }
 
-  // Dinf the registered map by name
+  // Find the registered map by name
   struct bpf_map *map = bpf_object__find_map_by_name(obj, "config_map");
   if (!map) {
     fprintf(stderr, "config_map not found\n");
@@ -80,16 +81,14 @@ int main(int argc, char **argv) {
 
   // Pass the receive Encryption prameters to the map
   __u32 key = 0;
-  if (bpf_map__update_elem(map, &key, sizeof(key), &cfg, sizeof(cfg),
-                           BPF_ANY)) {
+  if (bpf_map__update_elem(map, &key, sizeof(key), &cfg, sizeof(cfg), BPF_ANY)) {
     perror("bpf_map__update_elem");
     bpf_object__close(obj);
     return 1;
   }
 
   // Find the BPF fprogram by name
-  struct bpf_program *prog =
-      bpf_object__find_program_by_name(obj, "handle_write");
+  struct bpf_program *prog = bpf_object__find_program_by_name(obj, "handle_hook");
   if (!prog) {
     fprintf(stderr, "program not found\n");
     bpf_object__close(obj);

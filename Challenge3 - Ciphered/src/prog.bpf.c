@@ -2,8 +2,9 @@
 #include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
+#include <bpf/bpf_core_read.h>
 
-char LICENSE[] SEC("license") = "GPL";
+char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
 #define MAX_BUF 256
 #define COMM_LEN 16
@@ -29,8 +30,17 @@ int handle_hook(struct trace_event_raw_sys_enter *ctx) {
 
   char comm[COMM_LEN];
   bpf_get_current_comm(&comm, sizeof(comm));
-  if (bpf_strncmp(comm, COMM_LEN, cfg->target) != 0)
+
+  int match = 1;
+  for (int i = 0; i < COMM_LEN; i++){
+    if (comm[i] != cfg->target[i]) {
+      match = 0;
+      break;
+    }
+  }
+  if (!match){
     return 0;
+  }
 
   __u32 shift = cfg->shift;
   if (shift == 0)
