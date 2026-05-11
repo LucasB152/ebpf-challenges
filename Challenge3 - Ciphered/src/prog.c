@@ -19,8 +19,9 @@ static void handle_sig(int sig) { running = 0; }
 
 static void usage(const char *prog) {
   fprintf(stderr,
-          "Usage: %s [--shift <N>] <target_process_name>\n"
-          "  --shift   Caesar shift; any int (negative ok), normalized to [0,25] (default: 3)\n",
+          "Usage: %s [--shift <N>] [target_process_name]\n"
+          "  --shift   Caesar shift, normalized to [0,25] (default: 3)\n"
+          "  target    Process name to filter (default: echo_test)\n",
           prog);
 }
 
@@ -49,12 +50,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  // Positional argument: target process name
-  if (optind >= argc) {
-    usage(argv[0]);
-    return 1;
-  }
-  const char *target = argv[optind];
+  const char *target = (optind < argc) ? argv[optind] : "echo_test";
 
   cfg.shift = (unsigned int)(((raw_shift % 26) + 26) % 26);
   strncpy(cfg.target, target, COMM_LEN - 1);
@@ -68,13 +64,14 @@ int main(int argc, char **argv) {
   }
 
   // Load the BPF object file into the kernel
-  if (bpf_object__load(obj)) {
+  int err = bpf_object__load(obj);
+  if (err) {
     perror("bpf_object__load");
     bpf_object__close(obj);
     return 1;
   }
 
-  // Dinf the registered map by name
+  // Find the registered map by name
   struct bpf_map *map = bpf_object__find_map_by_name(obj, "config_map");
   if (!map) {
     fprintf(stderr, "config_map not found\n");
@@ -84,16 +81,14 @@ int main(int argc, char **argv) {
 
   // Pass the receive Encryption prameters to the map
   __u32 key = 0;
-  if (bpf_map__update_elem(map, &key, sizeof(key), &cfg, sizeof(cfg),
-                           BPF_ANY)) {
+  if (bpf_map__update_elem(map, &key, sizeof(key), &cfg, sizeof(cfg), BPF_ANY)) {
     perror("bpf_map__update_elem");
     bpf_object__close(obj);
     return 1;
   }
 
   // Find the BPF fprogram by name
-  struct bpf_program *prog =
-      bpf_object__find_program_by_name(obj, "handle_write");
+  struct bpf_program *prog = bpf_object__find_program_by_name(obj, "handle_hook");
   if (!prog) {
     fprintf(stderr, "program not found\n");
     bpf_object__close(obj);
