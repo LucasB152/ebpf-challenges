@@ -16,9 +16,3 @@ build.ninja
 # Build artifacts
 *.o
 vmlinux.h
-Challenge1*/skeleton/prog
-Challenge1*/hangman/hangman
-Challenge2*/skeleton/prog
-Challenge2*/scanner/scanner
-Challenge3*/skeleton/prog
-Challenge3*/test/writer
