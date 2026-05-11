@@ -106,7 +106,6 @@ int main(int argc, char **argv)
     unsigned int key = 0;
     if (bpf_map__update_elem(cfg_map, &key, sizeof(key), &cfg, sizeof(cfg), BPF_ANY) != 0) {
         perror("bpf_map_update_elem (config_map)");
-        bpf_link__destroy(link);
         bpf_object__close(obj);
         return 1;
     }
