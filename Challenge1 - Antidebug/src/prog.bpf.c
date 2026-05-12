@@ -6,8 +6,8 @@
 
 char LICENSE[] SEC("license") = "GPL";
 
-SEC("uprobe//home/student/projet2/challenge1/hangman/hangman:main")
-int BPF_UPROBE(handle_hook)
+SEC("uprobe//home/student/projet2/challenge1/hangman/hangman:make_hangman")
+int BPF_UPROBE(handle_hook, char *word, int guesses)
 {
     struct task_struct *task = (struct task_struct *)bpf_get_current_task();
     struct task_struct *parent = BPF_CORE_READ(task, real_parent);
