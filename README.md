@@ -10,7 +10,7 @@ Five small programs that use **eBPF** to observe and control the behaviour of ot
 | 2 | [Protected file](#2--protected-file) | LSM (`file_open`) | Prevents a malicious process from writing to files, without killing it |
 | 3 | [Ciphered writes](#3--ciphered-writes) | tracepoint (`sys_enter_write`) | Transparently applies a Caesar cipher to what a process writes to files |
 | 4 | [Fork rate limiting](#4--fork-rate-limiting) | tracepoint (`sys_exit_clone`) | Kills child processes created too quickly (sliding window) |
-| 5 | [Page fault frequency monitoring](#5--page-fault-frequency-monitoring) | kprobe (`handle_mm_fault`) + perf buffer | Notifies user space when a process's page fault frequency leaves a range |
+| 5 | [Page fault frequency monitoring](#5--page-fault-frequency-monitoring) | kprobe (`handle_mm_fault`) + perf buffer | Notifies user space when a process's page fault frequency leaves a range, using a sliding window in the kernel |
 
 Each challenge has the same structure: an eBPF program running in the kernel (`src/prog.bpf.c`), a user-space loader that configures and attaches it (`src/prog.c`), and a target program to test it.
 
@@ -135,8 +135,8 @@ With `n = 1` and `t = 1 s`, about one child per second survives, so far fewer th
 
 The eBPF program monitors the **page fault frequency** (PFF) of a process called `page_fault_gen`, and notifies user space through a **perf buffer** when it leaves the range [L, U] over a time window of *T* ms:
 
-- `PFF too high for process with PID …` when more than U × T page faults happen in the window. Detected in the kernel, at each page fault.
-- `PFF too low for process with PID …` when fewer than L × T page faults happen in the window. Detected by a timer in user space, since no event happens in the kernel when there are no page faults.
+- `PFF too high for process with PID …` when more than U × T page faults happen in the window. This is detected in the kernel: at each page fault, the eBPF program stores its timestamp in a sliding window and counts the faults still inside it with `bpf_loop`.
+- `PFF too low for process with PID …` when fewer than L × T page faults happen in the window. Since nothing happens in the kernel when there are no page faults, the eBPF program also sends user space a **deadline**: the moment the oldest fault leaves the window. The user-space loader waits on `perf_buffer__poll` until that deadline, and reports a too-low frequency if no new fault arrived in the meantime.
 
 | Option | Meaning | Default |
 |---|---|---|
